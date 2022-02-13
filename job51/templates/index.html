@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="referrer" content="no-referrer"/>
+    <title>Title</title>
+    <style>
+        .charts_render{
+            width: 1200px;
+            margin:50px auto
+        }
+        .title h1{
+            text-align:center;
+        }
+        .chart_list div{
+            float: left
+        }
+        .chart_list{
+            margin-top: 100px;
+            overflow: hidden
+        }
+        #loading{
+            width:100px;
+            margin: 0 auto;
+        }
+		#select{
+			visibility: hidden
+		}
+    </style>
+    <script src="./static/js/echarts.min.js"></script>
+    <script src="./static/js/china.js"></script>
+    <script src="./static/js/jquery-1.9.1.min.js"></script>
+    <script src="./static/js/word-cloud.js"></script>
+</head>
+<body>
+<!--<div class="main" style="width: 600px;height:400px;"></div>-->
+<div class="charts_render">
+    <div class="title">
+        <h1>前程无忧招聘岗位数据分析可视化</h1>
+    </div>
+	<select name="" id="select"></select>
+    <div id="loading"></div>
+    <div class="chart_list">
+        <div id="m1" style="width: 600px; height: 400px;"></div>
+        <div id="m2" style="width: 600px; height: 400px;"></div>
+        <div id="m3" style="width: 600px; height: 400px;"></div>
+        <div id="m4" style="width: 600px; height: 400px;"></div>
+    </div>
+</div>
+
+
+<script>
+function arr2dict(arr1, arr2){
+    arr3 = []
+    for (var i=0;i<arr1.length;i++){
+        console.log(arr1[i])
+        var arr_dict = {};
+        for (var j=0;j<arr2.length;j++){
+            if (i == j){
+            arr_dict.name = arr1[i]
+            arr_dict.value = arr2[j]
+            arr3.push(arr_dict)
+            }
+        }
+    }
+    return arr3
+}
+
+function showCharts(item){
+	var myChart1 = echarts.init(document.getElementById('m1'));
+	var myChart2 = echarts.init(document.getElementById('m2'));
+	var myChart3 = echarts.init(document.getElementById('m3'));
+	var myChart4 = echarts.init(document.getElementById('m4'));
+	var option1 = {
+	    title: {
+	        text: '公司规模'
+	    },
+	    dataset: [{
+	        dimensions: ['name', 'value'],
+	        source: item['company_size'],
+	    }, {
+	        transform: {
+	            type: 'sort',
+	            config: { dimension: 'value', order: 'desc' }
+	        }
+	    }],
+	    xAxis: {
+	        type: 'category',
+	        axisLabel: { interval: 0, rotate: 30 },
+	    },
+	    yAxis: {},
+	    series: {
+	        type: 'bar',
+	        encode: { x: 'name', y: 'value' },
+	        datasetIndex: 1
+	    }
+	};
+	
+	var option2 = {
+	title: {
+	    text: '公司类型',
+	    subtext: '',
+	    left: 'center'
+	},
+	tooltip: {
+	    trigger: 'item'
+	},
+	legend: {
+	    orient: 'vertical',
+	    left: 'left',
+	},
+	series: [
+	    {
+	        name: '公司类型',
+	        type: 'pie',
+	        radius: '50%',
+	        data: item['company_type'],
+	        emphasis: {
+	            itemStyle: {
+	                shadowBlur: 10,
+	                shadowOffsetX: 0,
+	                shadowColor: 'rgba(0, 0, 0, 0.5)'
+	            }
+	        }
+	    }
+		]
+	};
+	var data = item['provinces']
+	var geoCoordMap = item['geo_cities']
+	var convertData = function (data) {
+		var res = [];
+		for (var i = 0; i < data.length; i++) {
+			var geoCoord = geoCoordMap[data[i].name];
+			if (geoCoord) {
+				res.push({
+					name: data[i].name,
+					value: geoCoord.concat(data[i].value)
+				});
+			}
+		}
+		return res;
+	};
+	// 基于准备好的dom，初始化echarts实例
+	// 绘制图表
+	var option3 = {
+		title: {
+			text: '职位地点分布',
+		},
+		backgroundColor: 'transparent',
+		grid: { left: '20%', top: '2%', right: '12%', bottom: '18%' },
+		tooltip: {
+			trigger: 'item',
+			formatter: '{b}',
+		},
+		visualMap: {
+	
+			// precision:0,
+			// inRange: {
+			//     color: ['#d73435', '#f46e65', '#1493ed', '#4CADF1'],
+			// },
+			textStyle: {
+				color: '#000'
+			}
+		},
+		geo: {
+			map: 'china',
+			itemStyle: {
+				areaColor: '#ebedf0',
+				borderWidth: 1,
+				borderColor: '#fff',
+				emphasis: {
+					borderWidth: 2,
+					borderColor: '#fff',
+					areaColor: '#ebedf0',
+					label: { show: false }
+				}
+			},
+			label: {
+				emphasis: {
+					show: false
+				}
+			}
+		},
+		legend: {
+			orient: 'vertical',
+			top: 'top',
+			left: 'left',
+			data: ['访问量'],
+			textStyle: {
+				color: '#000'
+			}
+		},
+		series: [
+			{
+				// name: "访问量",
+				type: 'scatter',
+				coordinateSystem: 'geo',
+				data: convertData(data),
+				symbolSize: 4,
+				zoom: 1.2,
+				label: {
+					normal: {
+						formatter: '{b}',
+						position: 'right',
+						show: false
+					},
+					emphasis: {
+						show: true
+					}
+				},
+				itemStyle: {
+					normal: {
+						color: '#ddb926'
+					}
+				}
+			}
+		]
+	};
+	var option4 ={
+		//设置标题，居中显示
+		title:{
+			text: '职位词云图',
+			left:'center',
+		 },
+		//数据可以点击
+		tooltip:{
+			
+		},
+	
+		series:[
+			{
+				//词的类型
+				type: 'wordCloud',
+				//设置字符大小范围
+				sizeRange:[6,78],
+				rotationRange:[-45,90],
+				textStyle: {
+					normal:{
+						//生成随机的字体颜色
+						color:function () {
+							return 'rgb(' + [
+								Math.round(Math.random() * 160),
+								Math.round(Math.random() * 160),
+								Math.round(Math.random() * 160)
+							].join(',')+')';
+	
+						}
+					}
+	
+				},
+				//不要忘记调用数据
+				   data:item['words']
+			 }
+		]
+	
+	};
+			
+	
+	// 使用刚指定的配置项和数据显示图表。
+	myChart1.setOption(option1);
+	myChart2.setOption(option2);
+	myChart3.setOption(option3);
+	myChart4.setOption(option4);
+}
+
+var json_data = [];
+$(function () {
+            // 基于准备好的dom，初始化echarts实例
+
+            $.ajax({
+                url:'/getdata',
+                beforeSend:function(XMLHttpRequest){
+                      $("#loading").html("<img src='./static/images/loading.gif' width='200px' height='150px' />");
+                },
+                success:function (data) {
+                    json_data=JSON.parse(data)
+					var strNode = ""
+                    json_data.forEach(function(item){
+						strNode += "<option value ='" + item.keyword + "'> " + item.keyword + "</option>"
+					})
+					$("#select").html(strNode)
+					$("#select").css('visibility', 'visible')
+					showCharts(json_data[0])
+
+                    // 指定图表的配置项和数据
+                },
+				complete:function(XMLHttpRequest,textStatus){
+				  // alert('远程调用成功，状态文本值：'+textStatus);
+				 $("#loading").empty();
+				},
+            })
+        })
+		
+$('#select').change((val) => {
+	var keyword = $('#select').val();
+	console.log(keyword)
+	json_data.forEach(function(item){
+		console.log('item', item.keyword);
+		console.log('kw', keyword)
+		if (keyword == item.keyword){
+			showCharts(item)
+		} 
+	})	
+	// console.log('change');
+	// console.log($('#cont select option:selected').text());
+	// console.log($('#cont select').val());
+});
+
+
+
+</script>
+</body>
+</html>
